@@ -2,7 +2,7 @@ name: Daily Summary Report
 
 on:
   schedule:
-    - cron: "5 15 * * *"
+    - cron: "58 14 * * *"
   workflow_dispatch:
 
 permissions:
@@ -29,27 +29,29 @@ jobs:
           installation_id: ${{ secrets.APP_INSTALLATION_ID }}
 
       # 2) Fetch latest metrics JSON
-      - name: Download metrics JSON
+      - name: Download metrics CSV
         env:
-          TOKEN: ${{ steps.token.outputs.token }}
-          MONTH: $(date +%Y-%m)
+            TOKEN: ${{ steps.token.outputs.token }}
+            YEAR: ${{ github.event.schedule || '$(date +%Y)' }}
+            MONTH: ${{ github.event.schedule || '$(date +%Y-%m)' }}
         run: |
-          curl -sSL \
+            curl -f -sSL \
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.raw" \
-            -o metrics.json \
-            "https://api.github.com/repos/clockcrockwork/summary-data/contents/metrics/metrics-${MONTH}.json"
+            -o metrics.csv \
+            "https://api.github.com/repos/clockcrockwork/summary-data/contents/metrics/metrics-${YEAR}-${MONTH}.csv" \
+            || (echo "Download failed. No data?" && exit 0)
+
 
       # 3) Python グラフ生成
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: pip install matplotlib
-      - run: python scripts/generate_graph.py metrics.json graph.png
+      - run: pip install pandas matplotlib
+      - run: python scripts/generate_graph.py metrics.csv graph.png
 
       # 4) Discord 送信
       - name: Post PNG to Discord
+        if: success() && hashFiles('graph.png') != ''
         run: |
-          curl -F "file=@graph.png" "$DISCORD_WEBHOOK_URL"
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+            curl -F "file=@graph.png" "$DISCORD_WEBHOOK_URL"
