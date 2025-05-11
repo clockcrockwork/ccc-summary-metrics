@@ -5,6 +5,9 @@ on:
     - cron: "5 15 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   daily-graph:
     runs-on: ubuntu-latest

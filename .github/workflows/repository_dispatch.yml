@@ -1,5 +1,8 @@
 name: VPS Dispatch Handler
 
+permissions:
+  contents: read
+
 on:
   repository_dispatch:
     types: [vps-summary-ready]
