@@ -52,5 +52,8 @@ jobs:
       # 4) Discord 送信
       - name: Post PNG to Discord
         if: success() && hashFiles('graph.png') != ''
+        env:
+            DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
             curl -F "file=@graph.png" "$DISCORD_WEBHOOK_URL"
+
