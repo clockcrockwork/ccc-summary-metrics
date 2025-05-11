@@ -1,0 +1,52 @@
+name: Rotate & Archive Metrics
+
+on:
+  schedule:
+    - cron: "55 23 28-31 * *"   # 月末23:55 JST
+  workflow_dispatch:
+
+jobs:
+  rollup:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: rotate
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout public repo (scripts only)
+        uses: actions/checkout@v4
+        with:
+          path: dashboard
+
+      # 1) Token (read‑write)
+      - name: Get installation token
+        id: token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          installation_id: ${{ secrets.APP_INSTALLATION_ID_RW }}
+
+      # 2) Clone private metrics repo
+      - name: Clone private repo
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+        run: |
+          git clone https://x-access-token:${TOKEN}@github.com/clockcrockwork/summary-data.git data
+          cd data
+          git config user.name  "metrics-rotator[bot]"
+          git config user.email "bot@users.noreply.github.com"
+
+      # 3) Run roll‑up (Python)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pandas
+      - run: python ../dashboard/scripts/rotate_data.py
+        working-directory: data
+
+      # 4) Push changes
+      - run: |
+          git add metrics/daily metrics/monthly
+          if git diff --cached --quiet; then echo "No changes"; else git commit -m "chore: roll - up $(date -I)" && git push; fi
+        working-directory: data

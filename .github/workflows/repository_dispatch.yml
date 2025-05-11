@@ -1,0 +1,15 @@
+name: VPS Dispatch Handler
+
+on:
+  repository_dispatch:
+    types: [vps-summary-ready]
+
+jobs:
+  handle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acknowledge
+        run: |
+          echo "Triggered by VPS dispatch: ${{ github.event.client_payload.message }}"
+
+      # 必要なら metrics 再取得や即時グラフ生成を追加

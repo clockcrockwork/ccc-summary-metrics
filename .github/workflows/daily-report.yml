@@ -1,0 +1,52 @@
+name: Daily Summary Report
+
+on:
+  schedule:
+    - cron: "5 4 * * *"   # JST 13:05 (UTC 04:05)
+  workflow_dispatch:
+
+jobs:
+  daily-graph:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: daily-graph
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout (public repo)
+        uses: actions/checkout@v4
+
+      # 1) GitHub App → installation token
+      - name: Get installation token (read‑only)
+        id: token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          installation_id: ${{ secrets.APP_INSTALLATION_ID }}
+
+      # 2) Fetch latest metrics JSON
+      - name: Download metrics JSON
+        env:
+          TOKEN: ${{ steps.token.outputs.token }}
+          MONTH: $(date +%Y-%m)
+        run: |
+          curl -sSL \
+            -H "Authorization: token $TOKEN" \
+            -H "Accept: application/vnd.github.raw" \
+            -o metrics.json \
+            "https://api.github.com/repos/clockcrockwork/summary-data/contents/metrics/metrics-${MONTH}.json"
+
+      # 3) Python グラフ生成
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install matplotlib
+      - run: python scripts/generate_graph.py metrics.json graph.png
+
+      # 4) Discord 送信
+      - name: Post PNG to Discord
+        run: |
+          curl -F "file=@graph.png" "$DISCORD_WEBHOOK_URL"
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
