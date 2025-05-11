@@ -28,7 +28,7 @@ jobs:
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
           installation_id: ${{ secrets.APP_INSTALLATION_ID }}
 
-      # 2) Fetch latest metrics JSON
+      # 2) Fetch latest metrics CSV
       - name: Download metrics CSV
         env:
             TOKEN: ${{ steps.token.outputs.token }}
@@ -39,7 +39,7 @@ jobs:
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.raw" \
             -o metrics.csv \
-            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/metrics/metrics-${YEAR}-${MONTH}.csv" \
+            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/metrics/metrics-${MONTH}.csv" \
             || (echo "Download failed. No data?" && exit 0)
 
 
