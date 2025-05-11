@@ -39,7 +39,7 @@ jobs:
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.raw" \
             -o metrics.csv \
-            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/contents/metrics/metrics-${YEAR}-${MONTH}.csv" \
+            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/metrics/metrics-${YEAR}-${MONTH}.csv" \
             || (echo "Download failed. No data?" && exit 0)
 
 
