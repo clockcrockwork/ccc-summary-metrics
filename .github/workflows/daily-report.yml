@@ -55,5 +55,9 @@ jobs:
         env:
             DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+            if [ -n "$DISCORD_WEBHOOK_URL" ]; then
             curl -F "file=@graph.png" "$DISCORD_WEBHOOK_URL"
-
+            else
+            echo "DISCORD_WEBHOOK_URL is not set or empty. Skipping Discord notification."
+            exit 0
+            fi
