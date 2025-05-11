@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-"""metrics-YYYYMM.csv を日次 / 月次にロールアップして gzip 保存"""
 import pandas as pd, gzip, shutil, pathlib, datetime as dt
 
 ROOT = pathlib.Path.cwd() / "metrics"
