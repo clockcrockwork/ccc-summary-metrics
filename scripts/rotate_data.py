@@ -2,7 +2,7 @@
 """metrics-YYYYMM.csv を日次 / 月次にロールアップして gzip 保存"""
 import pandas as pd, gzip, shutil, pathlib, datetime as dt
 
-ROOT = pathlib.Path(__file__).resolve().parents[1] / "metrics"
+ROOT = pathlib.Path.cwd() / "metrics"
 
 # 対象月 = 当日から見て3か月前
 month = (dt.date.today().replace(day=1) - dt.timedelta(days=1)).replace(day=1)
