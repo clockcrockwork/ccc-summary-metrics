@@ -35,7 +35,7 @@ jobs:
         env:
           TOKEN: ${{ steps.token.outputs.token }}
         run: |
-          git clone https://x-access-token:${TOKEN}@github.com/clockcrockwork/summary-data.git data
+          git clone https://x-access-token:${TOKEN}@github.com/clockcrockwork/backup-ccc-summary.git data
           cd data
           git config user.name  "metrics-rotator[bot]"
           git config user.email "bot@users.noreply.github.com"
