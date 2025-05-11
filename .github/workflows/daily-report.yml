@@ -5,6 +5,9 @@ on:
     - cron: "5 4 * * *"   # JST 13:05 (UTC 04:05)
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   daily-graph:
     runs-on: ubuntu-latest
