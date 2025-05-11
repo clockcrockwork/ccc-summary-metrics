@@ -32,15 +32,14 @@ jobs:
       - name: Download metrics CSV
         env:
             TOKEN: ${{ steps.token.outputs.token }}
-            YEAR: ${{ github.event.schedule || '$(date +%Y)' }}
-            MONTH: ${{ github.event.schedule || '$(date +%Y-%m)' }}
         run: |
+            MONTH=$(date +%Y-%m)
             curl -f -sSL \
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.raw" \
             -o metrics.csv \
-            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/metrics/metrics-${MONTH}.csv" \
-            || (echo "Download failed. No data?" && exit 0)
+            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/contents/metrics/metrics-${MONTH}.csv" \
+            || (echo "[WARN] Download failed. Skipping graph." && touch metrics.csv)
 
 
       # 3) Python グラフ生成
