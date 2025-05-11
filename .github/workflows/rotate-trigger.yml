@@ -49,7 +49,14 @@ jobs:
         working-directory: data
 
       # 4) Push changes
-      - run: |
-          git add metrics/daily metrics/monthly
-          if git diff --cached --quiet; then echo "No changes"; else git commit -m "chore: roll - up $(date -I)" && git push; fi
+      - name: Prepare and commit changes
         working-directory: data
+        run: |
+          mkdir -p metrics/daily metrics/monthly
+          touch metrics/daily/.gitkeep metrics/monthly/.gitkeep
+          git add metrics/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: roll-up $(date -I)" && git push
+          fi
