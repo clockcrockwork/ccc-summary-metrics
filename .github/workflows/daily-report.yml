@@ -2,7 +2,7 @@ name: Daily Summary Report
 
 on:
   schedule:
-    - cron: "5 4 * * *"   # JST 13:05 (UTC 04:05)
+    - cron: "5 15 * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v4
 
       # 1) GitHub App → installation token
-      - name: Get installation token (read‑only)
+      - name: Get installation token (read - only)
         id: token
         uses: tibdex/github-app-token@v1
         with:

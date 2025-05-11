@@ -6,8 +6,7 @@ src, out = sys.argv[1:3]
 with open(src) as f:
     data = json.load(f)
 
-# TSV型: [{'ts': 1715088000, 'cpu': 12.3, ...}, ...]
-xs = [dt.datetime.fromtimestamp(d['ts']) for d in data[-288:]]  # 5分粒度×24h
+xs = [dt.datetime.fromtimestamp(d['ts']) for d in data[-288:]] 
 cpu = [d['cpu'] for d in data[-288:]]
 mem = [d['mem'] for d in data[-288:]]
 

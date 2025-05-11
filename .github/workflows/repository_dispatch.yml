@@ -11,5 +11,3 @@ jobs:
       - name: Acknowledge
         run: |
           echo "Triggered by VPS dispatch: ${{ github.event.client_payload.message }}"
-
-      # 必要なら metrics 再取得や即時グラフ生成を追加

@@ -2,7 +2,7 @@ name: Rotate & Archive Metrics
 
 on:
   schedule:
-    - cron: "55 23 28-31 * *"   # 月末23:55 JST
+    - cron: "55 14 28-31 * *"
   workflow_dispatch:
 
 jobs:
