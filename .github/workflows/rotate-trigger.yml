@@ -5,6 +5,9 @@ on:
     - cron: "55 23 28-31 * *"   # 月末23:55 JST
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   rollup:
     runs-on: ubuntu-latest
