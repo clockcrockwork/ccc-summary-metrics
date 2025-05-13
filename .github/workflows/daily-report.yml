@@ -37,7 +37,7 @@ jobs:
             -H "Authorization: token $TOKEN" \
             -H "Accept: application/vnd.github.raw" \
             -o metrics.csv \
-            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/contents/metrics/metrics-${MONTH}.csv" \
+            "https://api.github.com/repos/clockcrockwork/backup-ccc-summary/contents/metrics/system_metrics-${MONTH}.csv" \
             || (echo "[WARN] Download failed. Skipping graph." && touch metrics.csv)
 
 
