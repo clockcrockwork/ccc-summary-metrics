@@ -3,7 +3,6 @@ name: Daily Summary Report
 on:
   schedule:
     - cron: "58 14 * * *"
-  workflow_dispatch:
 
 permissions:
   contents: read
