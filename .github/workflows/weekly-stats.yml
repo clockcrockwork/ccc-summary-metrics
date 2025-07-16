@@ -71,52 +71,52 @@ jobs:
               
               # Pythonスクリプトを一時ファイルに保存して実行
               cat > calculate_stats.py << 'EOF'
-import json
-import sys
-from datetime import datetime
+          import json
+          import sys
+          from datetime import datetime
 
-workflow_id = sys.argv[1]
-workflow_name = sys.argv[2]
-start_date = sys.argv[3]
-end_date = sys.argv[4]
+          workflow_id = sys.argv[1]
+          workflow_name = sys.argv[2]
+          start_date = sys.argv[3]
+          end_date = sys.argv[4]
 
-runs = []
-with open(f'runs_{workflow_id}.json', 'r') as f:
-    for line in f:
-        if line.strip():
-            runs.append(json.loads(line))
+          runs = []
+          with open(f'runs_{workflow_id}.json', 'r') as f:
+              for line in f:
+                  if line.strip():
+                      runs.append(json.loads(line))
 
-stats = {
-    'workflow_name': workflow_name,
-    'workflow_id': int(workflow_id),
-    'period': {
-        'start': start_date,
-        'end': end_date
-    },
-    'total_runs': len(runs),
-    'success_count': sum(1 for r in runs if r.get('conclusion') == 'success'),
-    'failure_count': sum(1 for r in runs if r.get('conclusion') == 'failure'),
-    'cancelled_count': sum(1 for r in runs if r.get('conclusion') == 'cancelled'),
-}
+          stats = {
+              'workflow_name': workflow_name,
+              'workflow_id': int(workflow_id),
+              'period': {
+                  'start': start_date,
+                  'end': end_date
+              },
+              'total_runs': len(runs),
+              'success_count': sum(1 for r in runs if r.get('conclusion') == 'success'),
+              'failure_count': sum(1 for r in runs if r.get('conclusion') == 'failure'),
+              'cancelled_count': sum(1 for r in runs if r.get('conclusion') == 'cancelled'),
+          }
 
-stats['success_rate'] = (stats['success_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
-stats['failure_rate'] = (stats['failure_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
+          stats['success_rate'] = (stats['success_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
+          stats['failure_rate'] = (stats['failure_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
 
-# 平均実行時間を計算
-durations = []
-for run in runs:
-    if run.get('conclusion') == 'success' and run.get('run_started_at') and run.get('updated_at'):
-        try:
-            start = datetime.fromisoformat(run['run_started_at'].replace('Z', '+00:00'))
-            end = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
-            durations.append((end - start).total_seconds())
-        except:
-            pass
+          # 平均実行時間を計算
+          durations = []
+          for run in runs:
+              if run.get('conclusion') == 'success' and run.get('run_started_at') and run.get('updated_at'):
+                  try:
+                      start = datetime.fromisoformat(run['run_started_at'].replace('Z', '+00:00'))
+                      end = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
+                      durations.append((end - start).total_seconds())
+                  except:
+                      pass
 
-stats['avg_duration_seconds'] = sum(durations) / len(durations) if durations else 0
-stats['last_run_at'] = max((r.get('created_at') for r in runs), default=None)
+          stats['avg_duration_seconds'] = sum(durations) / len(durations) if durations else 0
+          stats['last_run_at'] = max((r.get('created_at') for r in runs), default=None)
 
-print(json.dumps(stats))
+          print(json.dumps(stats))
               EOF
               
               python3 calculate_stats.py "$id" "$name" "$START_DATE" "$END_DATE" > temp_stat.json
