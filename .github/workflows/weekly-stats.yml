@@ -1,0 +1,206 @@
+name: Weekly Actions Statistics Collection
+on:
+  schedule:
+    # 毎週月曜日 午前2時30分 (UTC) に実行
+    - cron: '30 2 * * 1'
+  workflow_dispatch: # 手動実行可能
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  collect-stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Create GitHub App Token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.PRIVATE_KEY }}
+      
+      - name: Set date range
+        run: |
+          echo "START_DATE=$(date -d '7 days ago' +%Y-%m-%d)" >> $GITHUB_ENV
+          echo "END_DATE=$(date +%Y-%m-%d)" >> $GITHUB_ENV
+          echo "REPORT_DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
+      
+      - name: Collect workflow statistics
+        run: |
+          # 全ワークフローの取得
+          gh api repos/${{ github.repository }}/actions/workflows \
+            --jq '.workflows[] | {id: .id, name: .name, path: .path}' > workflows.json
+          
+          # 統計データの初期化
+          echo "[]" > weekly_stats.json
+          
+          # 各ワークフローの実行データを収集
+          while IFS= read -r workflow; do
+            id=$(echo $workflow | jq -r '.id')
+            name=$(echo $workflow | jq -r '.name')
+            
+            echo "Collecting data for workflow: $name"
+            
+            # 過去7日間の実行データを取得
+            gh api "repos/${{ github.repository }}/actions/workflows/$id/runs" \
+              --paginate \
+              --jq ".workflow_runs[] | select(.created_at >= \"$START_DATE\" and .created_at <= \"$END_DATE\")" \
+              > "runs_$id.json"
+            
+            # 統計計算
+            if [ -s "runs_$id.json" ]; then
+              cat "runs_$id.json" | jq -s "
+                {
+                  workflow_name: \"$name\",
+                  workflow_id: $id,
+                  period: {
+                    start: \"$START_DATE\",
+                    end: \"$END_DATE\"
+                  },
+                  total_runs: length,
+                  success_count: (map(select(.conclusion == \"success\")) | length),
+                  failure_count: (map(select(.conclusion == \"failure\")) | length),
+                  cancelled_count: (map(select(.conclusion == \"cancelled\")) | length),
+                  success_rate: (if length > 0 then (map(select(.conclusion == \"success\")) | length) / length * 100 else 0 end),
+                  failure_rate: (if length > 0 then (map(select(.conclusion == \"failure\")) | length) / length * 100 else 0 end),
+                  avg_duration_seconds: (
+                    map(select(.conclusion == \"success\") | 
+                      if .run_started_at and .updated_at then 
+                        ((.updated_at | strptime(\"%Y-%m-%dT%H:%M:%SZ\") | mktime) - 
+                         (.run_started_at | strptime(\"%Y-%m-%dT%H:%M:%SZ\") | mktime))
+                      else 0 end
+                    ) | if length > 0 then add / length else 0 end
+                  ),
+                  last_run_at: (map(.created_at) | max)
+                }
+              " >> temp_stat.json
+              
+              # 統計データを結合
+              jq -s '. + [input]' weekly_stats.json temp_stat.json > updated_stats.json
+              mv updated_stats.json weekly_stats.json
+              rm temp_stat.json
+            fi
+          done < workflows.json
+          
+          # 最終統計データの整理
+          cat weekly_stats.json | jq '{
+            generated_at: now | strftime("%Y-%m-%dT%H:%M:%SZ"),
+            repository: "${{ github.repository }}",
+            statistics: .
+          }' > final_stats.json
+          
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      
+      - name: Update actions-log.json
+        run: |
+          # actions-log.jsonファイルの更新または作成
+          if [ -f "actions-log.json" ]; then
+            # 既存ファイルに新しいデータを追加
+            jq --argjson new_data "$(cat final_stats.json)" '. + [$new_data]' actions-log.json > updated_log.json
+            mv updated_log.json actions-log.json
+          else
+            # 新規ファイル作成
+            jq -s '.' final_stats.json > actions-log.json
+          fi
+          
+          # ログファイルのサイズ制限（最新50エントリまで保持）
+          jq '.[(-50):]' actions-log.json > temp_log.json
+          mv temp_log.json actions-log.json
+          
+          # 読みやすい形式で整理
+          jq --indent 2 '.' actions-log.json > formatted_log.json
+          mv formatted_log.json actions-log.json
+      
+      - name: Create detailed report
+        run: |
+          cat << 'EOF' > weekly_report.md
+          # 週次 GitHub Actions 統計レポート
+          
+          **レポート作成日**: $(date '+%Y年%m月%d日')  
+          **対象期間**: $START_DATE から $END_DATE まで
+          
+          ## 統計サマリー
+          
+          | ワークフロー名 | 実行回数 | 成功率 | 失敗率 | 平均実行時間(秒) | 最終実行日 |
+          |---|---|---|---|---|---|
+          EOF
+          
+          # 統計データからMarkdownテーブルを生成
+          cat final_stats.json | jq -r '
+            .statistics[] | 
+            "| \(.workflow_name) | \(.total_runs) | \(.success_rate | tostring | .[0:5])% | \(.failure_rate | tostring | .[0:5])% | \(.avg_duration_seconds | tostring | .[0:6]) | \(.last_run_at // "N/A") |"
+          ' >> weekly_report.md
+          
+          cat << 'EOF' >> weekly_report.md
+          
+          ## 詳細分析
+          
+          ### 成功率が90%未満のワークフロー
+          EOF
+          
+          # 問題のあるワークフローを特定
+          cat final_stats.json | jq -r '
+            .statistics[] | 
+            select(.success_rate < 90 and .total_runs > 0) | 
+            "- **\(.workflow_name)**: 成功率 \(.success_rate | tostring | .[0:5])% (\(.success_count)/\(.total_runs) 回成功)"
+          ' >> weekly_report.md
+          
+          echo "" >> weekly_report.md
+          echo "### 実行時間が長いワークフロー (60秒以上)" >> weekly_report.md
+          
+          cat final_stats.json | jq -r '
+            .statistics[] | 
+            select(.avg_duration_seconds > 60) | 
+            "- **\(.workflow_name)**: 平均実行時間 \(.avg_duration_seconds | tostring | .[0:6]) 秒"
+          ' >> weekly_report.md
+          
+          # 変数の展開
+          envsubst < weekly_report.md > final_report.md
+          mv final_report.md weekly_report.md
+      
+      - name: Create pull request
+        id: create-pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          commit-message: "chore: update weekly actions statistics (${{ env.REPORT_DATE }})"
+          title: "📊 週次 Actions 統計レポート - ${{ env.REPORT_DATE }}"
+          body-path: weekly_report.md
+          branch: actions-stats-${{ env.REPORT_DATE }}
+          delete-branch: true
+          labels: |
+            automation
+            statistics
+            actions
+          assignees: ${{ github.repository_owner }}
+          reviewers: ${{ github.repository_owner }}
+      
+      - name: Auto-merge pull request
+        if: steps.create-pr.outputs.pull-request-number
+        run: |
+          # 短い待機後にマージ実行
+          sleep 10
+          
+          # プルリクエストの自動マージを有効化
+          gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} \
+            --auto \
+            --squash \
+            --delete-branch
+          
+          echo "Auto-merge enabled for PR #${{ steps.create-pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+      
+      - name: Cleanup temporary files
+        if: always()
+        run: |
+          rm -f workflows.json runs_*.json final_stats.json weekly_stats.json temp_stat.json
+          echo "Cleanup completed"
