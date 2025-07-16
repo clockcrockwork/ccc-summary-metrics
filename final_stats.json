@@ -1,0 +1,102 @@
+{
+  "generated_at": "2025-07-16T02:00:02Z",
+  "repository": "clockcrockwork/ccc-summary-metrics",
+  "statistics": [
+    {
+      "workflow_name": "Daily Summary Report",
+      "workflow_id": 161248627,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 5,
+      "success_count": 5,
+      "failure_count": 0,
+      "cancelled_count": 0,
+      "success_rate": 100.0,
+      "failure_rate": 0.0,
+      "avg_duration_seconds": 28.6,
+      "last_run_at": "2025-07-13T15:00:03Z"
+    },
+    {
+      "workflow_name": "VPS Dispatch Handler",
+      "workflow_id": 161248628,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "cancelled_count": 0,
+      "success_rate": 0,
+      "failure_rate": 0,
+      "avg_duration_seconds": 0,
+      "last_run_at": null
+    },
+    {
+      "workflow_name": "Rotate & Archive Metrics",
+      "workflow_id": 161248629,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "cancelled_count": 0,
+      "success_rate": 0,
+      "failure_rate": 0,
+      "avg_duration_seconds": 0,
+      "last_run_at": null
+    },
+    {
+      "workflow_name": "Weekly Actions Statistics Collection",
+      "workflow_id": 174918916,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "cancelled_count": 0,
+      "success_rate": 0,
+      "failure_rate": 0,
+      "avg_duration_seconds": 0,
+      "last_run_at": null
+    },
+    {
+      "workflow_name": "Dependabot Updates",
+      "workflow_id": 161226157,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 2,
+      "success_count": 1,
+      "failure_count": 1,
+      "cancelled_count": 0,
+      "success_rate": 50.0,
+      "failure_rate": 50.0,
+      "avg_duration_seconds": 38.0,
+      "last_run_at": "2025-07-14T12:31:35Z"
+    },
+    {
+      "workflow_name": "CodeQL",
+      "workflow_id": 161248636,
+      "period": {
+        "start": "2025-07-09",
+        "end": "2025-07-16"
+      },
+      "total_runs": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "cancelled_count": 0,
+      "success_rate": 100.0,
+      "failure_rate": 0.0,
+      "avg_duration_seconds": 47.0,
+      "last_run_at": "2025-07-12T05:22:37Z"
+    }
+  ]
+}
