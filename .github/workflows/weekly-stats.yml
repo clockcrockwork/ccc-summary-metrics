@@ -117,7 +117,7 @@ jobs:
           stats['last_run_at'] = max((r.get('created_at') for r in runs), default=None)
 
           print(json.dumps(stats))
-              EOF
+          EOF
               
               python3 calculate_stats.py "$id" "$name" "$START_DATE" "$END_DATE" > temp_stat.json
               rm -f calculate_stats.py
