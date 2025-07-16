@@ -25,6 +25,7 @@ jobs:
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          permission-pull-requests: write
       
       - name: Set date range
         run: |
