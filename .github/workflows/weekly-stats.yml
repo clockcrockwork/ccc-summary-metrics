@@ -69,50 +69,58 @@ jobs:
             if [ -s "runs_$id.json" ]; then
               echo "Calculating statistics for $name..."
               
-              # Pythonを使用して日付計算（より堅牢）
-              python3 -c "
-                import json
-                import sys
-                from datetime import datetime
+              # Pythonスクリプトを一時ファイルに保存して実行
+              cat > calculate_stats.py << 'EOF'
+import json
+import sys
+from datetime import datetime
 
-                runs = []
-                with open('runs_$id.json', 'r') as f:
-                    for line in f:
-                        if line.strip():
-                            runs.append(json.loads(line))
+workflow_id = sys.argv[1]
+workflow_name = sys.argv[2]
+start_date = sys.argv[3]
+end_date = sys.argv[4]
 
-                stats = {
-                    'workflow_name': '$name',
-                    'workflow_id': $id,
-                    'period': {
-                        'start': '$START_DATE',
-                        'end': '$END_DATE'
-                    },
-                    'total_runs': len(runs),
-                    'success_count': sum(1 for r in runs if r.get('conclusion') == 'success'),
-                    'failure_count': sum(1 for r in runs if r.get('conclusion') == 'failure'),
-                    'cancelled_count': sum(1 for r in runs if r.get('conclusion') == 'cancelled'),
-                }
+runs = []
+with open(f'runs_{workflow_id}.json', 'r') as f:
+    for line in f:
+        if line.strip():
+            runs.append(json.loads(line))
 
-                stats['success_rate'] = (stats['success_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
-                stats['failure_rate'] = (stats['failure_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
+stats = {
+    'workflow_name': workflow_name,
+    'workflow_id': int(workflow_id),
+    'period': {
+        'start': start_date,
+        'end': end_date
+    },
+    'total_runs': len(runs),
+    'success_count': sum(1 for r in runs if r.get('conclusion') == 'success'),
+    'failure_count': sum(1 for r in runs if r.get('conclusion') == 'failure'),
+    'cancelled_count': sum(1 for r in runs if r.get('conclusion') == 'cancelled'),
+}
 
-                # 平均実行時間を計算
-                durations = []
-                for run in runs:
-                    if run.get('conclusion') == 'success' and run.get('run_started_at') and run.get('updated_at'):
-                        try:
-                            start = datetime.fromisoformat(run['run_started_at'].replace('Z', '+00:00'))
-                            end = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
-                            durations.append((end - start).total_seconds())
-                        except:
-                            pass
+stats['success_rate'] = (stats['success_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
+stats['failure_rate'] = (stats['failure_count'] / stats['total_runs'] * 100) if stats['total_runs'] > 0 else 0
 
-                stats['avg_duration_seconds'] = sum(durations) / len(durations) if durations else 0
-                stats['last_run_at'] = max((r.get('created_at') for r in runs), default=None)
+# 平均実行時間を計算
+durations = []
+for run in runs:
+    if run.get('conclusion') == 'success' and run.get('run_started_at') and run.get('updated_at'):
+        try:
+            start = datetime.fromisoformat(run['run_started_at'].replace('Z', '+00:00'))
+            end = datetime.fromisoformat(run['updated_at'].replace('Z', '+00:00'))
+            durations.append((end - start).total_seconds())
+        except:
+            pass
 
-                print(json.dumps(stats))
-              " > temp_stat.json
+stats['avg_duration_seconds'] = sum(durations) / len(durations) if durations else 0
+stats['last_run_at'] = max((r.get('created_at') for r in runs), default=None)
+
+print(json.dumps(stats))
+EOF
+              
+              python3 calculate_stats.py "$id" "$name" "$START_DATE" "$END_DATE" > temp_stat.json
+              rm -f calculate_stats.py
               
               # 統計データを追加
               jq -s '.[0] + [.[1]]' weekly_stats.json temp_stat.json > updated_stats.json
