@@ -17,18 +17,19 @@ jobs:
 
     steps:
       - name: Checkout public repo (scripts only)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: dashboard
 
       # 1) Token (read‑write)
       - name: Get installation token
         id: token
-        uses: tibdex/github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
-          installation_id: ${{ secrets.APP_INSTALLATION_ID_RW }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: clockcrockwork
+          repositories: backup-ccc-summary
 
       # 2) Clone private metrics repo
       - name: Clone private repo
@@ -41,7 +42,7 @@ jobs:
           git config user.email "bot@users.noreply.github.com"
 
       # 3) Run roll‑up (Python)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x'
       - run: pip install pandas

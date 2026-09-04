@@ -16,16 +16,17 @@ jobs:
 
     steps:
       - name: Checkout (public repo)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      # 1) GitHub App → installation token
+      # 1) GitHub App → installation token
       - name: Get installation token (read - only)
         id: token
-        uses: tibdex/github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
-          installation_id: ${{ secrets.APP_INSTALLATION_ID }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: clockcrockwork
+          repositories: backup-ccc-summary
 
       # 2) Fetch latest metrics CSV
       - name: Download metrics CSV
@@ -42,7 +43,7 @@ jobs:
 
 
       # 3) Python グラフ生成
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x'
       - run: pip install pandas matplotlib
